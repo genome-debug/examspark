@@ -1,99 +1,112 @@
 // backend/src/store/subscribers.js
-// In-memory store for push subscriptions.
-// 🔁 Production: Replace with PostgreSQL / MongoDB.
+// PostgreSQL store for push subscriptions.
 
+const { Pool } = require("pg");
 const { v4: uuidv4 } = require("uuid");
 
-/** @type {Map<string, Subscriber>} */
-const subscribers = new Map();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
-/**
- * @typedef {Object} Subscriber
- * @property {string} id
- * @property {object} subscription  — Web Push subscription object from client
- * @property {string} exam
- * @property {string[]} subjects
- * @property {number} intervalMinutes
- * @property {boolean} distractMode
- * @property {Date} createdAt
- * @property {Date} lastNotifiedAt
- */
+// Create table if it doesn't exist
+async function init() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS subscribers (
+      id TEXT PRIMARY KEY,
+      subscription JSONB NOT NULL,
+      exam TEXT NOT NULL,
+      subjects TEXT[] NOT NULL,
+      interval_minutes INTEGER DEFAULT 30,
+      distract_mode BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      last_notified_at TIMESTAMP
+    )
+  `);
+  console.log("[Store] PostgreSQL table ready");
+}
+
+init().catch(console.error);
 
 const store = {
-  /**
-   * Add or update a subscriber
-   */
-  upsert(subscription, { exam, subjects, intervalMinutes, distractMode }) {
-    // Use endpoint as stable unique key
-    const existing = [...subscribers.values()].find(
-      (s) => s.subscription.endpoint === subscription.endpoint
+  async upsert(subscription, { exam, subjects, intervalMinutes, distractMode }) {
+    const endpoint = subscription.endpoint;
+
+    // Check if exists
+    const existing = await pool.query(
+      "SELECT id FROM subscribers WHERE subscription->>'endpoint' = $1",
+      [endpoint]
     );
 
-    const id = existing?.id || uuidv4();
-    const record = {
-      id,
-      subscription,
-      exam,
-      subjects,
-      intervalMinutes: intervalMinutes || 30,
-      distractMode: !!distractMode,
-      createdAt: existing?.createdAt || new Date(),
-      lastNotifiedAt: existing?.lastNotifiedAt || null,
-    };
+    const id = existing.rows[0]?.id || uuidv4();
 
-    subscribers.set(id, record);
-    console.log(`[Store] Upserted subscriber ${id} — ${exam} (${subjects.join(", ")})`);
-    return record;
+    await pool.query(
+      `INSERT INTO subscribers (id, subscription, exam, subjects, interval_minutes, distract_mode, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       ON CONFLICT (id) DO UPDATE SET
+         subscription = $2, exam = $3, subjects = $4,
+         interval_minutes = $5, distract_mode = $6`,
+      [id, JSON.stringify(subscription), exam, subjects, intervalMinutes || 30, !!distractMode]
+    );
+
+    console.log(`[Store] Upserted subscriber ${id} — ${exam}`);
+    const row = await pool.query("SELECT * FROM subscribers WHERE id = $1", [id]);
+    return formatRow(row.rows[0]);
   },
 
-  /**
-   * Remove a subscriber by endpoint
-   */
-  removeByEndpoint(endpoint) {
-    for (const [id, sub] of subscribers) {
-      if (sub.subscription.endpoint === endpoint) {
-        subscribers.delete(id);
-        console.log(`[Store] Removed subscriber ${id}`);
-        return true;
-      }
-    }
-    return false;
+  async removeByEndpoint(endpoint) {
+    const result = await pool.query(
+      "DELETE FROM subscribers WHERE subscription->>'endpoint' = $1",
+      [endpoint]
+    );
+    return result.rowCount > 0;
   },
 
-  /**
-   * Get all subscribers due for a notification
-   */
-  getDue() {
-    const now = new Date();
-    return [...subscribers.values()].filter((sub) => {
-      if (!sub.lastNotifiedAt) return true;
-      const elapsed = (now - sub.lastNotifiedAt) / 1000 / 60; // minutes
-      return elapsed >= sub.intervalMinutes;
-    });
+  async getDue() {
+    const result = await pool.query(`
+      SELECT * FROM subscribers
+      WHERE last_notified_at IS NULL
+         OR EXTRACT(EPOCH FROM (NOW() - last_notified_at)) / 60 >= interval_minutes
+    `);
+    return result.rows.map(formatRow);
   },
 
-  /**
-   * Get all subscribers with distract mode on
-   */
-  getDistractMode() {
-    return [...subscribers.values()].filter((s) => s.distractMode);
+  async getDistractMode() {
+    const result = await pool.query(
+      "SELECT * FROM subscribers WHERE distract_mode = TRUE"
+    );
+    return result.rows.map(formatRow);
   },
 
-  /**
-   * Mark a subscriber as notified now
-   */
-  markNotified(id) {
-    const sub = subscribers.get(id);
-    if (sub) sub.lastNotifiedAt = new Date();
+  async markNotified(id) {
+    await pool.query(
+      "UPDATE subscribers SET last_notified_at = NOW() WHERE id = $1",
+      [id]
+    );
   },
 
-  getAll() {
-    return [...subscribers.values()];
+  async getAll() {
+    const result = await pool.query("SELECT * FROM subscribers");
+    return result.rows.map(formatRow);
   },
 
-  count() {
-    return subscribers.size;
+  async count() {
+    const result = await pool.query("SELECT COUNT(*) FROM subscribers");
+    return parseInt(result.rows[0].count);
   },
 };
+
+function formatRow(row) {
+  return {
+    id: row.id,
+    subscription: row.subscription,
+    exam: row.exam,
+    subjects: row.subjects,
+    intervalMinutes: row.interval_minutes,
+    distractMode: row.distract_mode,
+    createdAt: row.created_at,
+    lastNotifiedAt: row.last_notified_at,
+  };
+}
 
 module.exports = store;
