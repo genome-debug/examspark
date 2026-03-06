@@ -1,0 +1,22 @@
+{
+  "name": "examspark-backend",
+  "version": "1.0.0",
+  "description": "ExamSpark push notification backend",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "generate-vapid": "node src/utils/generateVapid.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.3",
+    "uuid": "^9.0.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
