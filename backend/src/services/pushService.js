@@ -1,16 +1,16 @@
 // backend/src/services/pushService.js
-// Wraps web-push to send notifications.
+// Uses Firebase Admin SDK to send real FCM push notifications to Android devices.
 
-const webpush = require("web-push");
+const admin = require("firebase-admin");
 const store = require("../store/subscribers");
 const { getRandomFact } = require("../data/facts");
 
-// Configure VAPID once at startup
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL,
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+// Initialize Firebase Admin SDK once at startup
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(require("../firebase-service-account.json")),
+  });
+}
 
 /**
  * Build the notification payload for a subscriber
@@ -30,20 +30,13 @@ function buildPayload(subscriber, { forced = false } = {}) {
       topic: fact.topic,
       unit: fact.unit,
       chapter: fact.chapter,
-      forced,
-      url: "/dashboard",
+      forced: forced ? "true" : "false",
     },
-    badge: "/icons/badge.png",
-    icon: "/icons/icon-192.png",
-    vibrate: forced ? [200, 100, 200, 100, 200] : [100, 50, 100],
-    tag: forced ? "distract-mode" : `spark-${Date.now()}`,
-    renotify: forced,
-    requireInteraction: forced,
   };
 }
 
 /**
- * Send a single push notification to a subscriber
+ * Send a single FCM push notification to a subscriber
  */
 async function sendToSubscriber(subscriber, options = {}) {
   const payload = buildPayload(subscriber, options);
@@ -52,18 +45,41 @@ async function sendToSubscriber(subscriber, options = {}) {
     return;
   }
 
+  const fcmToken = subscriber.subscription.endpoint;
+
+  // Skip invalid tokens (device IDs from old fallback)
+  if (fcmToken.startsWith("device_")) {
+    console.warn(`[Push] Skipping non-FCM token for ${subscriber.id}`);
+    return;
+  }
+
   try {
-    await webpush.sendNotification(
-      subscriber.subscription,
-      JSON.stringify(payload)
-    );
-    store.markNotified(subscriber.id);
+    await admin.messaging().send({
+      token: fcmToken,
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: payload.data,
+      android: {
+        priority: options.forced ? "high" : "normal",
+        notification: {
+          channelId: options.forced ? "examspark-distract" : "examspark-spark",
+          color: options.forced ? "#FF4D6D" : "#FF6B35",
+          clickAction: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      },
+    });
+
+    await store.markNotified(subscriber.id);
     console.log(`[Push] ✅ Sent "${payload.data.topic}" → ${subscriber.id}`);
   } catch (err) {
-    if (err.statusCode === 404 || err.statusCode === 410) {
-      // Subscription expired/unsubscribed — clean up
-      console.log(`[Push] 🗑️  Removing expired subscription ${subscriber.id}`);
-      store.removeByEndpoint(subscriber.subscription.endpoint);
+    if (
+      err.code === "messaging/invalid-registration-token" ||
+      err.code === "messaging/registration-token-not-registered"
+    ) {
+      console.log(`[Push] 🗑️  Removing expired token for ${subscriber.id}`);
+      await store.removeByEndpoint(fcmToken);
     } else {
       console.error(`[Push] ❌ Failed to send to ${subscriber.id}:`, err.message);
     }
@@ -74,7 +90,7 @@ async function sendToSubscriber(subscriber, options = {}) {
  * Send to all subscribers who are due (called by cron)
  */
 async function sendDueNotifications() {
-  const due = store.getDue();
+  const due = await store.getDue();
   if (due.length === 0) return;
 
   console.log(`[Cron] Sending to ${due.length} due subscriber(s)...`);
@@ -85,7 +101,7 @@ async function sendDueNotifications() {
  * Send distract-mode burst to all subscribers with it enabled
  */
 async function sendDistractBurst() {
-  const subs = store.getDistractMode();
+  const subs = await store.getDistractMode();
   if (subs.length === 0) return;
 
   console.log(`[Cron] 🚨 Distract burst → ${subs.length} subscriber(s)`);
@@ -98,7 +114,8 @@ async function sendDistractBurst() {
  * Send an immediate spark to a specific subscriber (manual trigger)
  */
 async function sendImmediateSpark(subscriberId) {
-  const sub = store.getAll().find((s) => s.id === subscriberId);
+  const all = await store.getAll();
+  const sub = all.find((s) => s.id === subscriberId);
   if (!sub) throw new Error(`Subscriber ${subscriberId} not found`);
   await sendToSubscriber(sub);
   return { ok: true };
