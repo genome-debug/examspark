@@ -50,7 +50,7 @@ router.post("/subscribe", async (req, res) => {
     return res.status(400).json({ error: "subjects must be a non-empty array" });
   }
 
-  const record = store.upsert(subscription, {
+  const record = await store.upsert(subscription, {
     exam,
     subjects,
     intervalMinutes: Math.max(1, Math.min(intervalMinutes || 30, 1440)),
