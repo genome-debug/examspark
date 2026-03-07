@@ -113,3 +113,10 @@ router.post("/spark", async (req, res) => {
 });
 
 module.exports = router;
+router.get("/fact", (req, res) => {
+  const { exam, subjects } = req.query;
+  const subjectList = subjects ? subjects.split(',') : [];
+  const fact = getRandomFact(exam, subjectList);
+  if (!fact) return res.status(404).json({ error: "No facts found" });
+  res.json(fact);
+});
