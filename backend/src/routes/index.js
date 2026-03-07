@@ -73,19 +73,22 @@ router.post("/subscribe", async (req, res) => {
 
 // ── Update Preferences ────────────────────────────────────────────────────────
 // Body: { endpoint, intervalMinutes?, distractMode?, subjects? }
-router.patch("/subscribe", (req, res) => {
+router.patch("/subscribe", async (req, res) => {
   const { endpoint, intervalMinutes, distractMode, subjects } = req.body;
   if (!endpoint) return res.status(400).json({ error: "endpoint required" });
 
-  const sub = store.getAll().find((s) => s.subscription.endpoint === endpoint);
+  const all = await store.getAll();
+  const sub = all.find((s) => s.subscription.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: "Subscription not found" });
 
-  if (intervalMinutes !== undefined)
-    sub.intervalMinutes = Math.max(1, Math.min(intervalMinutes, 1440));
-  if (distractMode !== undefined) sub.distractMode = !!distractMode;
-  if (Array.isArray(subjects) && subjects.length > 0) sub.subjects = subjects;
+  await store.upsert(sub.subscription, {
+    exam: sub.exam,
+    subjects: Array.isArray(subjects) && subjects.length > 0 ? subjects : sub.subjects,
+    intervalMinutes: intervalMinutes !== undefined ? Math.max(1, Math.min(intervalMinutes, 1440)) : sub.intervalMinutes,
+    distractMode: distractMode !== undefined ? !!distractMode : sub.distractMode,
+  });
 
-  res.json({ ok: true, subscriber: { id: sub.id, intervalMinutes: sub.intervalMinutes, distractMode: sub.distractMode, subjects: sub.subjects } });
+  res.json({ ok: true });
 });
 
 // ── Unsubscribe ───────────────────────────────────────────────────────────────
