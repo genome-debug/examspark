@@ -6,10 +6,10 @@ const { sendImmediateSpark, sendToSubscriber } = require("../services/pushServic
 const { EXAM_DATA } = require("../data/facts");
 
 // ── Health Check ─────────────────────────────────────────────────────────────
-router.get("/health", (req, res) => {
+router.get("/health", async (req, res) => {
   res.json({
     status: "ok",
-    subscribers: store.count(),
+    subscribers: await store.count(),
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });
