@@ -3,7 +3,7 @@
 const router = require("express").Router();
 const store = require("../store/subscribers");
 const { sendImmediateSpark, sendToSubscriber } = require("../services/pushService");
-const { EXAM_DATA } = require("../data/facts");
+const { EXAM_DATA, getRandomFact } = require("../data/facts");
 
 // ── Health Check ─────────────────────────────────────────────────────────────
 router.get("/health", async (req, res) => {
