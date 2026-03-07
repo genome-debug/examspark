@@ -121,5 +121,15 @@ router.get("/fact", (req, res) => {
   if (!fact) return res.status(404).json({ error: "No facts found" });
   res.json(fact);
 });
+router.get("/debug/subscribers", async (req, res) => {
+  const all = await store.getAll();
+  res.json(all.map(s => ({
+    id: s.id,
+    exam: s.exam,
+    endpoint: s.subscription.endpoint.substring(0, 20) + "...",
+    intervalMinutes: s.intervalMinutes,
+    nextNotifyAt: s.nextNotifyAt,
+  })));
+});
 module.exports = router;
 
