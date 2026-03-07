@@ -131,5 +131,16 @@ router.get("/debug/subscribers", async (req, res) => {
     nextNotifyAt: s.nextNotifyAt,
   })));
 });
+router.get("/debug/subscribers", async (req, res) => {
+  const all = await store.getAll();
+  const due = await store.getDue();
+  res.json({ all: all.map(s => ({
+    id: s.id,
+    exam: s.exam,
+    endpoint: s.subscription.endpoint.substring(0, 20) + "...",
+    intervalMinutes: s.intervalMinutes,
+    lastNotifiedAt: s.lastNotifiedAt,
+  })), dueCount: due.length, dueIds: due.map(s => s.id) });
+});
 module.exports = router;
 
