@@ -8,7 +8,7 @@ const { getRandomFact } = require("../data/facts");
 // Initialize Firebase Admin SDK once at startup
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(require("../firebase-service-account.json")),
+    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
   });
 }
 
