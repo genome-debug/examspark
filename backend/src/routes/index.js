@@ -111,8 +111,6 @@ router.post("/spark", async (req, res) => {
     res.status(404).json({ error: err.message });
   }
 });
-
-module.exports = router;
 router.get("/fact", (req, res) => {
   const { exam, subjects } = req.query;
   const subjectList = subjects ? subjects.split(',') : [];
@@ -120,3 +118,5 @@ router.get("/fact", (req, res) => {
   if (!fact) return res.status(404).json({ error: "No facts found" });
   res.json(fact);
 });
+module.exports = router;
+
