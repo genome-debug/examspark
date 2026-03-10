@@ -81,8 +81,8 @@
     <div class="header">
       <div class="logo">⚡ ExamSpark</div>
       <div class="badge">छात्र अनुसंधान सर्वे</div>
-      <h1>हमें वो ऐप बनाने में<br><span>मदद करो जो तुम्हें चाहिए</span></h1>
-      <p class="subtitle">सिर्फ 5 मिनट। तुम्हारे जवाब सीधे ExamSpark को बेहतर बनाएंगे।</p>
+      <h1>हमें वो ऐप बनाने में<br><span>मदद करिए जो आपको चाहिए</span></h1>
+      <p class="subtitle">सिर्फ 5 मिनट। आपका जवाब सीधे ExamSpark को बेहतर बनाएगा।</p>
       <div class="intro-card">
         <p>"यह app कोई बड़ी company नहीं बना रही — एक ऐसा इंसान बना रहा है जो इस grind को समझता है। ExamSpark दिन भर में छोटे, दमदार study sparks भेजता है — overwhelm करने के लिए नहीं, बल्कि उस आग को जलाए रखने के लिए। सोचो एक ऐसा study buddy जो अचानक बोले 'यार, क्या तुम्को पता था कि...' और तुम वापस किताब उठा लो। बस यही है ExamSpark। अब बताओ तुम्हें क्या चाहिए।"</p>
       </div>
@@ -97,7 +97,7 @@
     <!-- Q1 -->
     <div class="section">
       <div class="section-num">सवाल 01</div>
-      <div class="section-title">तुम कौन सी परीक्षा की तैयारी कर रहे हो?</div>
+      <div class="section-title">आप कौन सी परीक्षा की तैयारी कर रहे हो?</div>
       <div class="options-grid cols-2">
         <div class="option" onclick="select('q1','UPSC CSE',this)"><span class="option-icon">🏛️</span><div class="option-content"><div class="option-label">UPSC CSE</div><div class="option-sub">सिविल सेवा</div></div><div class="option-check"></div></div>
         <div class="option" onclick="select('q1','JEE Advanced',this)"><span class="option-icon">⚡</span><div class="option-content"><div class="option-label">JEE Advanced</div><div class="option-sub">IIT प्रवेश</div></div><div class="option-check"></div></div>
@@ -125,7 +125,7 @@
     <!-- Q3 -->
     <div class="section">
       <div class="section-num">सवाल 03</div>
-      <div class="section-title">रोज़ाना कितने घंटे पढ़ते हो?</div>
+      <div class="section-title">रोज़ाना कितने घंटे पढ़ते है?</div>
       <div class="options-grid cols-3">
         <div class="option compact" onclick="select('q3','4h से कम',this)"><div class="option-content"><div class="option-label">4h से कम</div></div><div class="option-check"></div></div>
         <div class="option compact" onclick="select('q3','4-6 घंटे',this)"><div class="option-content"><div class="option-label">4–6 घंटे</div></div><div class="option-check"></div></div>
@@ -417,7 +417,14 @@
     document.getElementById('form-view').style.display = 'none';
     document.getElementById('thankyou-view').style.display = 'block';
     window.scrollTo({top:0,behavior:'smooth'});
-    console.log('[ExamSpark Survey HI]', JSON.stringify(answers, null, 2));
+    console.log('[ExamSpark Survey EN]', JSON.stringify(answers, null, 2));
+    // Send to Google Sheets
+    fetch('https://script.google.com/macros/s/AKfycbwqvQSK7dxhNs766fa5DAar_DsMpXFuJmstyCEiGQkn-kdXkNocVARFD81N4Es-Xkmd/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...answers, lang: 'en' })
+    });
   }
 
   function copyLink() { navigator.clipboard.writeText(window.location.href).then(()=>alert('Link copy हो गया! 🙏')); }
