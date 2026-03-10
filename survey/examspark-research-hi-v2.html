@@ -368,17 +368,15 @@
   const answers = { q1:null,q2:null,q3:null,q4:[],q5:null,q6:[],q7:null,q8:[],q9:null,q10:null,q11:[],q12:null,q13:null,q14:null,q15:[],q16:null,q17,q1_other:'' };
   const totalQ = 17;
 
-  function select(qId, value, el) {
+function select(qId, value, el) {
     el.closest('.options-grid').querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
     answers[qId] = value;
-    // Show other exam input if needed
-    const otherInput = document.getElementById('other-exam');
-  otherInput.style.display = (qId === 'q1' && (value === 'Other' || value === 'अन्य')) ? 'block' :
-  (qId === 'q1' && value !== 'Other' && value !== 'अन्य') ? 'none' : otherInput.style.display;
+    if (qId === 'q1') {
+      const otherInput = document.getElementById('other-exam');
+      if (otherInput) otherInput.style.display = (value === 'Other' || value === 'अन्य') ? 'block' : 'none';
     }
     updateProgress();
-  
   }
 
   function multiSelect(qId, value, el) {
