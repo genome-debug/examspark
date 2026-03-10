@@ -375,6 +375,12 @@
     el.closest('.options-grid').querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
     answers[qId] = value;
+    // Show other exam input if needed
+    const otherInput = document.getElementById('other-exam');
+    if (otherInput) {
+      otherInput.style.display = (qId === 'q1' && value === 'Other') ? 'block' : 
+        (qId === 'q1' && value !== 'Other') ? 'none' : otherInput.style.display;
+    }
     updateProgress();
   }
 
