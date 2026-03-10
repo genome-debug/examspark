@@ -54,7 +54,6 @@
   .text-input { width: 100%; background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 18px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; transition: border-color 0.2s ease; resize: vertical; min-height: 100px; }
   .text-input:focus { border-color: var(--spark); }
   .text-input::placeholder { color: var(--muted); }
-  .text-input.single { min-height: unset; height: 52px; resize: none; }
   .divider { height: 1px; background: var(--border); margin: 36px 0; }
   .submit-section { text-align: center; }
   .submit-btn { background: linear-gradient(135deg, var(--spark), var(--spark2)); border: none; border-radius: 16px; padding: 18px 48px; color: white; font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 8px 32px rgba(255,107,53,0.3); }
@@ -105,9 +104,9 @@
         <div class="option" onclick="select('q1','NEET',this)"><span class="option-icon">🩺</span><div class="option-content"><div class="option-label">NEET</div><div class="option-sub">Medical Entrance</div></div><div class="option-check"></div></div>
         <div class="option" onclick="select('q1','CAT',this)"><span class="option-icon">📊</span><div class="option-content"><div class="option-label">CAT</div><div class="option-sub">MBA Entrance</div></div><div class="option-check"></div></div>
         <div class="option" onclick="select('q1','SSC CGL',this)"><span class="option-icon">🎯</span><div class="option-content"><div class="option-label">SSC CGL</div><div class="option-sub">Staff Selection</div></div><div class="option-check"></div></div>
-<div class="option" onclick="select('q1','Other',this)";<span class="option-icon">📚</span><div class="option-content"><div class="option-label">Other</div><div class="option-sub">Different exam</div></div><div class="option-check"></div></div>
+        <div class="option" onclick="select('q1','Other',this)"><span class="option-icon">📚</span><div class="option-content"><div class="option-label">Other</div><div class="option-sub">Different exam</div></div><div class="option-check"></div></div>
       </div>
-<input type="text" id="other-exam" class="text-input" style="display:none;margin-top:12px;min-height:unset;height:52px;width:100%;" placeholder="Which exam? e.g. IBPS, RRB, GATE..." oninput="answers.q1_other=this.value" />
+      <input type="text" id="other-exam" class="text-input" style="display:none;margin-top:12px;min-height:unset;height:52px;width:100%;" placeholder="Which exam? e.g. IBPS, RRB, GATE..." oninput="answers.q1_other=this.value" />
     </div>
     <div class="divider"></div>
 
@@ -367,18 +366,16 @@
 </div>
 
 <script>
-  const answers = { q1:null,q2:null,q3:null,q4:[],q5:null,q6:[],q7:null,q8:[],q9:null,q10:null,q11:[],q12:null,q13:null,q14:null,q15:[],q16:null,q17,q1_other:'' };
+  const answers = { q1:null, q1_other:'', q2:null, q3:null, q4:[], q5:null, q6:[], q7:null, q8:[], q9:null, q10:null, q11:[], q12:null, q13:null, q14:null, q15:[], q16:null, q17:'' };
   const totalQ = 17;
 
   function select(qId, value, el) {
     el.closest('.options-grid').querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
     answers[qId] = value;
-    // Show other exam input if needed
-    const otherInput = document.getElementById('other-exam');
-    if (otherInput) {
-      otherInput.style.display = (qId === 'q1' && value === 'Other') ? 'block' : 
-        (qId === 'q1' && value !== 'Other') ? 'none' : otherInput.style.display;
+    if (qId === 'q1') {
+      const otherInput = document.getElementById('other-exam');
+      if (otherInput) otherInput.style.display = value === 'Other' ? 'block' : 'none';
     }
     updateProgress();
   }
@@ -411,7 +408,7 @@
     if (answered < 10) { alert('Please answer at least 10 questions before submitting 🙏'); return; }
 
     const summary = [
-      {label:'Exam', val: answers.q1||'—'},
+      {label:'Exam', val: answers.q1 === 'Other' ? (answers.q1_other || 'Other') : answers.q1 || '—'},
       {label:'Stage', val: answers.q2||'—'},
       {label:'Resources used', val: answers.q4.join(', ')||'—'},
       {label:'Monthly spend', val: answers.q5||'—'},
@@ -425,8 +422,7 @@
     document.getElementById('form-view').style.display = 'none';
     document.getElementById('thankyou-view').style.display = 'block';
     window.scrollTo({top:0,behavior:'smooth'});
-console.log('[ExamSpark Survey EN]', JSON.stringify(answers, null, 2));
-    // Send to Google Sheets
+    console.log('[ExamSpark Survey EN]', JSON.stringify(answers, null, 2));
     fetch('https://script.google.com/macros/s/AKfycbwqvQSK7dxhNs766fa5DAar_DsMpXFuJmstyCEiGQkn-kdXkNocVARFD81N4Es-Xkmd/exec', {
       method: 'POST',
       mode: 'no-cors',
