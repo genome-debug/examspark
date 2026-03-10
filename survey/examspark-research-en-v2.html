@@ -418,7 +418,14 @@
     document.getElementById('form-view').style.display = 'none';
     document.getElementById('thankyou-view').style.display = 'block';
     window.scrollTo({top:0,behavior:'smooth'});
-    console.log('[ExamSpark Survey EN]', JSON.stringify(answers, null, 2));
+console.log('[ExamSpark Survey EN]', JSON.stringify(answers, null, 2));
+    // Send to Google Sheets
+    fetch('https://script.google.com/macros/s/AKfycbwqvQSK7dxhNs766fa5DAar_DsMpXFuJmstyCEiGQkn-kdXkNocVARFD81N4Es-Xkmd/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...answers, lang: 'en' })
+    });
   }
 
   function copyLink() { navigator.clipboard.writeText(window.location.href).then(()=>alert('Link copied! 🙏')); }
