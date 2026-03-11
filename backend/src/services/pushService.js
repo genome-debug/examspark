@@ -12,25 +12,35 @@ if (!admin.apps.length) {
   });
 }
 
+// Spark slot labels shown in notification title
+const SLOT_LABELS = {
+  morning:   "☀️ Morning Spark",
+  afternoon: "⚡ Afternoon Spark",
+  evening:   "🌙 Evening Spark",
+};
+
 /**
  * Build the notification payload for a subscriber
  */
-function buildPayload(subscriber, { forced = false } = {}) {
+function buildPayload(subscriber, { forced = false, slot = null } = {}) {
   const fact = getRandomFact(subscriber.exam, subscriber.subjects);
   if (!fact) return null;
+
+  const slotLabel = slot ? SLOT_LABELS[slot] : `${fact.icon} ExamSpark · ${fact.subject}`;
 
   return {
     title: forced
       ? "🚨 Hey! Stop Scrolling — Study Time!"
-      : `${fact.icon} ExamSpark · ${fact.subject}`,
+      : slotLabel,
     body: fact.fact,
     data: {
       exam: fact.exam,
       subject: fact.subject,
       topic: fact.topic,
-      unit: fact.unit,
-      chapter: fact.chapter,
+      unit: fact.unit || "",
+      chapter: fact.chapter || "",
       forced: forced ? "true" : "false",
+      slot: slot || "manual",
     },
   };
 }
@@ -47,7 +57,7 @@ async function sendToSubscriber(subscriber, options = {}) {
 
   const fcmToken = subscriber.subscription.endpoint;
 
-  // Skip invalid tokens (device IDs from old fallback)
+  // Skip invalid tokens
   if (fcmToken.startsWith("device_")) {
     console.warn(`[Push] Skipping non-FCM token for ${subscriber.id}`);
     return;
@@ -72,7 +82,7 @@ async function sendToSubscriber(subscriber, options = {}) {
     });
 
     await store.markNotified(subscriber.id);
-    console.log(`[Push] ✅ Sent "${payload.data.topic}" → ${subscriber.id}`);
+    console.log(`[Push] ✅ Sent "${payload.data.topic}" → ${subscriber.id} [${payload.data.slot}]`);
   } catch (err) {
     if (
       err.code === "messaging/invalid-registration-token" ||
@@ -87,14 +97,18 @@ async function sendToSubscriber(subscriber, options = {}) {
 }
 
 /**
- * Send to all subscribers who are due (called by cron)
+ * Send daily spark to ALL subscribers at fixed times (8AM, 1PM, 7PM IST)
  */
-async function sendDueNotifications() {
-  const due = await store.getDue();
-  if (due.length === 0) return;
+async function sendDailySparkToAll(slot = "morning") {
+  const all = await store.getAll();
+  if (all.length === 0) {
+    console.log(`[Cron] No subscribers for ${slot} spark`);
+    return;
+  }
 
-  console.log(`[Cron] Sending to ${due.length} due subscriber(s)...`);
-  await Promise.allSettled(due.map((sub) => sendToSubscriber(sub)));
+  console.log(`[Cron] 🔥 ${slot} spark → sending to ${all.length} subscriber(s)...`);
+  await Promise.allSettled(all.map((sub) => sendToSubscriber(sub, { slot })));
+  console.log(`[Cron] ✅ ${slot} spark done`);
 }
 
 /**
@@ -111,18 +125,19 @@ async function sendDistractBurst() {
 }
 
 /**
- * Send an immediate spark to a specific subscriber (manual trigger)
+ * Send an immediate spark to a specific subscriber (manual trigger / Spark Me Now)
  */
 async function sendImmediateSpark(subscriberId) {
   const all = await store.getAll();
   const sub = all.find((s) => s.id === subscriberId);
   if (!sub) throw new Error(`Subscriber ${subscriberId} not found`);
-  await sendToSubscriber(sub);
+  await sendToSubscriber(sub, { slot: "manual" });
   return { ok: true };
 }
 
 module.exports = {
-  sendDueNotifications,
+  sendDailySparkToAll,
+  sendDueNotifications: sendDailySparkToAll, // keep old name working just in case
   sendDistractBurst,
   sendImmediateSpark,
   sendToSubscriber,
