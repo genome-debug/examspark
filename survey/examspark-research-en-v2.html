@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExamSpark · Student Research Survey</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0A0F; --surface: #13131A; --surface2: #1C1C26;
+    --border: #2A2A38; --spark: #FF6B35; --spark2: #FF9A3C;
+    --text: #F0F0F5; --muted: #6B6B80; --dim: #3A3A4A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; top: -200px; left: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(255,107,53,0.08) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+  body::after { content: ''; position: fixed; bottom: -200px; right: -200px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(132,94,194,0.07) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+  .container { max-width: 680px; margin: 0 auto; padding: 40px 20px 80px; position: relative; z-index: 1; }
+  .lang-switch { position: fixed; top: 16px; right: 16px; z-index: 100; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 8px 16px; font-size: 13px; color: var(--spark); font-weight: 600; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+  .header { text-align: center; margin-bottom: 48px; animation: fadeUp 0.6s ease both; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, var(--spark), var(--spark2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 20px; }
+  .badge { display: inline-block; background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.2); color: var(--spark); font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; padding: 6px 14px; border-radius: 20px; margin-bottom: 20px; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(26px, 5vw, 40px); font-weight: 800; line-height: 1.15; margin-bottom: 16px; }
+  h1 span { background: linear-gradient(135deg, var(--spark), var(--spark2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 480px; margin: 0 auto 24px; }
+  .intro-card { background: var(--surface); border: 1px solid rgba(255,107,53,0.2); border-radius: 16px; padding: 20px 24px; margin-bottom: 32px; text-align: left; }
+  .intro-card p { font-size: 14px; line-height: 1.8; color: #C0C0CC; font-style: italic; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .progress-bar { background: var(--surface2); border-radius: 4px; height: 4px; margin-bottom: 40px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--spark), var(--spark2)); border-radius: 4px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); width: 0%; }
+  .section { margin-bottom: 32px; animation: fadeUp 0.5s ease both; }
+  .section-num { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--spark); margin-bottom: 8px; }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 19px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+  .section-desc { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  .options-grid { display: grid; gap: 10px; }
+  .options-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .options-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .option { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 18px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px; }
+  .option:hover { border-color: rgba(255,107,53,0.4); transform: translateY(-1px); }
+  .option.selected { border-color: var(--spark); background: rgba(255,107,53,0.08); }
+  .option-icon { font-size: 20px; flex-shrink: 0; }
+  .option-content { flex: 1; }
+  .option-label { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .option-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .option-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--dim); display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; flex-shrink: 0; }
+  .option.selected .option-check { background: var(--spark); border-color: var(--spark); }
+  .option-check::after { content: '✓'; font-size: 11px; color: white; opacity: 0; transition: opacity 0.2s ease; }
+  .option.selected .option-check::after { opacity: 1; }
+  .option.compact { padding: 12px 16px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: var(--surface); border: 1.5px solid var(--border); border-radius: 30px; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s ease; user-select: none; }
+  .chip:hover { border-color: rgba(255,107,53,0.4); }
+  .chip.selected { background: rgba(255,107,53,0.1); border-color: var(--spark); color: var(--spark); }
+  .text-input { width: 100%; background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 18px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; transition: border-color 0.2s ease; resize: vertical; min-height: 100px; }
+  .text-input:focus { border-color: var(--spark); }
+  .text-input::placeholder { color: var(--muted); }
+  .divider { height: 1px; background: var(--border); margin: 36px 0; }
+  .submit-section { text-align: center; }
+  .submit-btn { background: linear-gradient(135deg, var(--spark), var(--spark2)); border: none; border-radius: 16px; padding: 18px 48px; color: white; font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 8px 32px rgba(255,107,53,0.3); }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,107,53,0.4); }
+  .submit-note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+  .thankyou { display: none; text-align: center; padding: 60px 20px; animation: fadeUp 0.6s ease both; }
+  .thankyou-icon { font-size: 64px; margin-bottom: 24px; display: block; }
+  .thankyou h2 { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; margin-bottom: 12px; }
+  .thankyou p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 400px; margin: 0 auto 32px; }
+  .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; margin-top: 24px; text-align: left; }
+  .result-title { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .result-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; gap: 12px; }
+  .result-item:last-child { border-bottom: none; }
+  .result-val { color: var(--spark); font-weight: 600; text-align: right; max-width: 60%; font-size: 12px; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @media(max-width:480px) { .options-grid.cols-2{grid-template-columns:1fr} .options-grid.cols-3{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body>
+
+<a class="lang-switch" href="examspark-research-hi-v2.html">🇮🇳 हिंदी में भरें</a>
+
+<div class="container">
+  <div id="form-view">
+    <div class="header">
+      <div class="logo">⚡ ExamSpark</div>
+      <div class="badge">Student Research Survey</div>
+      <h1>Help us build the app<br><span>you actually need</span></h1>
+      <p class="subtitle">Takes 5 minutes. Your answers directly shape how ExamSpark works.</p>
+      <div class="intro-card">
+        <p>"This app is being built by someone who understands the grind. ExamSpark sends you small, punchy study sparks throughout the day — not to overwhelm you, but to keep the fire going. Think of it as a study buddy who randomly drops a 'did you know?' that makes you go back to your books. Tell us what you actually need."</p>
+      </div>
+    </div>
+
+    <div class="progress-label">
+      <span id="progress-text">0 of 17 answered</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <!-- Q1 -->
+    <div class="section">
+      <div class="section-num">Question 01</div>
+      <div class="section-title">Which exam are you preparing for?</div>
+      <div class="options-grid cols-2">
+        <div class="option" onclick="select('q1','UPSC CSE',this)"><span class="option-icon">🏛️</span><div class="option-content"><div class="option-label">UPSC CSE</div><div class="option-sub">Civil Services</div></div><div class="option-check"></div></div>
+        <div class="option" onclick="select('q1','JEE Advanced',this)"><span class="option-icon">⚡</span><div class="option-content"><div class="option-label">JEE Advanced</div><div class="option-sub">IIT Entrance</div></div><div class="option-check"></div></div>
+        <div class="option" onclick="select('q1','NEET',this)"><span class="option-icon">🩺</span><div class="option-content"><div class="option-label">NEET</div><div class="option-sub">Medical Entrance</div></div><div class="option-check"></div></div>
+        <div class="option" onclick="select('q1','CAT',this)"><span class="option-icon">📊</span><div class="option-content"><div class="option-label">CAT</div><div class="option-sub">MBA Entrance</div></div><div class="option-check"></div></div>
+        <div class="option" onclick="select('q1','SSC CGL',this)"><span class="option-icon">🎯</span><div class="option-content"><div class="option-label">SSC CGL</div><div class="option-sub">Staff Selection</div></div><div class="option-check"></div></div>
+        <div class="option" onclick="select('q1','Other',this)"><span class="option-icon">📚</span><div class="option-content"><div class="option-label">Other</div><div class="option-sub">Different exam</div></div><div class="option-check"></div></div>
+      </div>
+      <input type="text" id="other-exam" class="text-input" style="display:none;margin-top:12px;min-height:unset;height:52px;width:100%;" placeholder="Which exam? e.g. IBPS, RRB, GATE..." oninput="answers.q1_other=this.value" />
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q2 -->
+    <div class="section">
+      <div class="section-num">Question 02</div>
+      <div class="section-title">What stage of preparation are you in?</div>
+      <div class="options-grid">
+        <div class="option compact" onclick="select('q2','Just started (0-3 months)',this)"><span class="option-icon">🌱</span><div class="option-content"><div class="option-label">Just started</div><div class="option-sub">0–3 months in</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q2','Mid preparation (3-12 months)',this)"><span class="option-icon">📖</span><div class="option-content"><div class="option-label">Mid preparation</div><div class="option-sub">3–12 months in</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q2','Advanced (1+ year)',this)"><span class="option-icon">🔥</span><div class="option-content"><div class="option-label">Advanced</div><div class="option-sub">1+ year in</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q2','Repeater / Retrying',this)"><span class="option-icon">💪</span><div class="option-content"><div class="option-label">Repeater</div><div class="option-sub">Retrying after attempt</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q3 -->
+    <div class="section">
+      <div class="section-num">Question 03</div>
+      <div class="section-title">How many hours do you study per day?</div>
+      <div class="options-grid cols-3">
+        <div class="option compact" onclick="select('q3','Less than 4h',this)"><div class="option-content"><div class="option-label">Less than 4h</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q3','4-6 hours',this)"><div class="option-content"><div class="option-label">4–6 hours</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q3','6-8 hours',this)"><div class="option-content"><div class="option-label">6–8 hours</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q3','8-10 hours',this)"><div class="option-content"><div class="option-label">8–10 hours</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q3','10+ hours',this)"><div class="option-content"><div class="option-label">10+ hours</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q4 -->
+    <div class="section">
+      <div class="section-num">Question 04</div>
+      <div class="section-title">Which apps or resources do you currently use for preparation?</div>
+      <div class="section-desc">Pick all that apply.</div>
+      <div class="chips">
+        <div class="chip" onclick="multiSelect('q4','YouTube',this)">▶️ YouTube</div>
+        <div class="chip" onclick="multiSelect('q4','Unacademy',this)">📱 Unacademy</div>
+        <div class="chip" onclick="multiSelect('q4','BYJU\'S',this)">📱 BYJU'S</div>
+        <div class="chip" onclick="multiSelect('q4','PW (Physics Wallah)',this)">📱 Physics Wallah</div>
+        <div class="chip" onclick="multiSelect('q4','Testbook',this)">📝 Testbook</div>
+        <div class="chip" onclick="multiSelect('q4','Standard books only',this)">📚 Standard books only</div>
+        <div class="chip" onclick="multiSelect('q4','Coaching institute',this)">🏫 Coaching institute</div>
+        <div class="chip" onclick="multiSelect('q4','Telegram groups',this)">💬 Telegram groups</div>
+        <div class="chip" onclick="multiSelect('q4','Self study only',this)">🧘 Self study only</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q5 -->
+    <div class="section">
+      <div class="section-num">Question 05</div>
+      <div class="section-title">How much do you spend monthly on study resources?</div>
+      <div class="options-grid cols-2">
+        <div class="option compact" onclick="select('q5','Nothing - free only',this)"><div class="option-content"><div class="option-label">Nothing</div><div class="option-sub">Free resources only</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q5','Under ₹200',this)"><div class="option-content"><div class="option-label">Under ₹200</div><div class="option-sub">Minimal spending</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q5','₹200-500',this)"><div class="option-content"><div class="option-label">₹200–500</div><div class="option-sub">Some spending</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q5','₹500-1000',this)"><div class="option-content"><div class="option-label">₹500–1000</div><div class="option-sub">Regular spending</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q5','₹1000-3000',this)"><div class="option-content"><div class="option-label">₹1000–3000</div><div class="option-sub">Serious investment</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q5','₹3000+',this)"><div class="option-content"><div class="option-label">₹3000+</div><div class="option-sub">Heavy investment</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q6 -->
+    <div class="section">
+      <div class="section-num">Question 06</div>
+      <div class="section-title">What's your biggest challenge while studying?</div>
+      <div class="section-desc">Pick all that apply.</div>
+      <div class="chips">
+        <div class="chip" onclick="multiSelect('q6','Staying motivated',this)">😔 Staying motivated</div>
+        <div class="chip" onclick="multiSelect('q6','Phone distractions',this)">📱 Phone distractions</div>
+        <div class="chip" onclick="multiSelect('q6','Forgetting what I studied',this)">🧠 Forgetting things</div>
+        <div class="chip" onclick="multiSelect('q6','Information overload',this)">🌊 Too much to study</div>
+        <div class="chip" onclick="multiSelect('q6','Lack of consistency',this)">📅 Inconsistency</div>
+        <div class="chip" onclick="multiSelect('q6','Anxiety/stress',this)">😰 Anxiety & stress</div>
+        <div class="chip" onclick="multiSelect('q6','No study buddy',this)">👤 Studying alone</div>
+        <div class="chip" onclick="multiSelect('q6','Poor time management',this)">⏰ Time management</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q7 -->
+    <div class="section">
+      <div class="section-num">Question 07</div>
+      <div class="section-title">Do you have notifications ON for any study app right now?</div>
+      <div class="options-grid">
+        <div class="option compact" onclick="select('q7','Yes - and I actually read them',this)"><span class="option-icon">✅</span><div class="option-content"><div class="option-label">Yes — I actually read them</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q7','Yes - but I mostly ignore them',this)"><span class="option-icon">😑</span><div class="option-content"><div class="option-label">Yes — but mostly ignore them</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q7','No - I turned them all off',this)"><span class="option-icon">🔕</span><div class="option-content"><div class="option-label">No — turned them all off</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q7','No study app installed',this)"><span class="option-icon">📵</span><div class="option-content"><div class="option-label">No study app installed</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q8 -->
+    <div class="section">
+      <div class="section-num">Question 08</div>
+      <div class="section-title">Why do you usually uninstall or stop using a study app?</div>
+      <div class="section-desc">Pick all that apply.</div>
+      <div class="chips">
+        <div class="chip" onclick="multiSelect('q8','Too many notifications',this)">🔔 Too many notifications</div>
+        <div class="chip" onclick="multiSelect('q8','Content not relevant',this)">❌ Content not relevant</div>
+        <div class="chip" onclick="multiSelect('q8','Boring UI/design',this)">😴 Boring design</div>
+        <div class="chip" onclick="multiSelect('q8','Too expensive',this)">💸 Too expensive</div>
+        <div class="chip" onclick="multiSelect('q8','Didn\'t build habit',this)">📅 Didn't build habit</div>
+        <div class="chip" onclick="multiSelect('q8','Better alternative found',this)">🔀 Found better option</div>
+        <div class="chip" onclick="multiSelect('q8','Takes too much time',this)">⏰ Takes too much time</div>
+        <div class="chip" onclick="multiSelect('q8','Feels like a chore',this)">😩 Feels like a chore</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q9 -->
+    <div class="section">
+      <div class="section-num">Question 09</div>
+      <div class="section-title">How often do you get distracted by your phone while studying?</div>
+      <div class="options-grid">
+        <div class="option compact" onclick="select('q9','Rarely - I keep it away',this)"><span class="option-icon">💚</span><div class="option-content"><div class="option-label">Rarely</div><div class="option-sub">Keep phone away while studying</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q9','Sometimes - few times an hour',this)"><span class="option-icon">🟡</span><div class="option-content"><div class="option-label">Sometimes</div><div class="option-sub">A few times per hour</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q9','Often - every 15-20 min',this)"><span class="option-icon">🟠</span><div class="option-content"><div class="option-label">Often</div><div class="option-sub">Every 15–20 minutes</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q9','Very often - constant battle',this)"><span class="option-icon">🔴</span><div class="option-content"><div class="option-label">Very often</div><div class="option-sub">Constant battle with phone</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q10 -->
+    <div class="section">
+      <div class="section-num">Question 10</div>
+      <div class="section-title">How many study sparks per day would feel right?</div>
+      <div class="options-grid cols-3">
+        <div class="option compact" onclick="select('q10','1-2 per day',this)"><div class="option-content"><div class="option-label">1–2 / day</div><div class="option-sub">Very minimal</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q10','3-5 per day',this)"><div class="option-content"><div class="option-label">3–5 / day</div><div class="option-sub">Sweet spot</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q10','5-10 per day',this)"><div class="option-content"><div class="option-label">5–10 / day</div><div class="option-sub">Frequent</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q10','10+ per day',this)"><div class="option-content"><div class="option-label">10+ / day</div><div class="option-sub">Constant</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q10','Only when I ask',this)"><div class="option-content"><div class="option-label">On demand</div><div class="option-sub">Only when I tap</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q11 -->
+    <div class="section">
+      <div class="section-num">Question 11</div>
+      <div class="section-title">When would you most like to receive a study spark?</div>
+      <div class="section-desc">Pick all that apply.</div>
+      <div class="chips">
+        <div class="chip" onclick="multiSelect('q11','Early morning (6-8 AM)',this)">🌅 Early morning (6–8 AM)</div>
+        <div class="chip" onclick="multiSelect('q11','Morning (8-10 AM)',this)">☀️ Morning (8–10 AM)</div>
+        <div class="chip" onclick="multiSelect('q11','Mid-morning (10-12 PM)',this)">🌤️ Mid-morning (10–12 PM)</div>
+        <div class="chip" onclick="multiSelect('q11','Lunch break (12-2 PM)',this)">🍱 Lunch break (12–2 PM)</div>
+        <div class="chip" onclick="multiSelect('q11','Afternoon (2-5 PM)',this)">🌞 Afternoon (2–5 PM)</div>
+        <div class="chip" onclick="multiSelect('q11','Evening (5-8 PM)',this)">🌆 Evening (5–8 PM)</div>
+        <div class="chip" onclick="multiSelect('q11','Night (8-11 PM)',this)">🌙 Night (8–11 PM)</div>
+        <div class="chip" onclick="multiSelect('q11','Late night (11 PM+)',this)">🦉 Late night (11 PM+)</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q12 -->
+    <div class="section">
+      <div class="section-num">Question 12</div>
+      <div class="section-title">How long should an ideal spark notification be?</div>
+      <div class="options-grid">
+        <div class="option compact" onclick="select('q12','5 seconds - one line',this)"><span class="option-icon">⚡</span><div class="option-content"><div class="option-label">5 seconds</div><div class="option-sub">One punchy line, that's it</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q12','10-15 seconds - 2-3 lines',this)"><span class="option-icon">📖</span><div class="option-content"><div class="option-label">10–15 seconds</div><div class="option-sub">2–3 lines with context</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q12','30 seconds - short paragraph',this)"><span class="option-icon">📝</span><div class="option-content"><div class="option-label">30 seconds</div><div class="option-sub">Short paragraph with explanation</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q12','Depends on topic',this)"><span class="option-icon">🤔</span><div class="option-content"><div class="option-label">Depends on the topic</div><div class="option-sub">Sometimes short, sometimes detailed</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q13 -->
+    <div class="section">
+      <div class="section-num">Question 13</div>
+      <div class="section-title">What kind of spark content would hook you the most?</div>
+      <div class="options-grid">
+        <div class="option compact" onclick="select('q13','Surprising facts',this)"><span class="option-icon">🤯</span><div class="option-content"><div class="option-label">Surprising facts</div><div class="option-sub">"Did you know the Indian constitution has 448 articles?"</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q13','Quick quiz questions',this)"><span class="option-icon">❓</span><div class="option-content"><div class="option-label">Quick quiz questions</div><div class="option-sub">"Which article abolished untouchability?"</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q13','Motivational + fact combo',this)"><span class="option-icon">🔥</span><div class="option-content"><div class="option-label">Motivational + fact</div><div class="option-sub">"Toppers know this — do you?"</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q13','Previous year exam facts',this)"><span class="option-icon">📝</span><div class="option-content"><div class="option-label">Previous year facts</div><div class="option-sub">Facts that actually appeared in exams</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q14 -->
+    <div class="section">
+      <div class="section-num">Question 14</div>
+      <div class="section-title">Which language would you prefer for your sparks?</div>
+      <div class="options-grid cols-3">
+        <div class="option compact" onclick="select('q14','English',this)"><span class="option-icon">🇬🇧</span><div class="option-content"><div class="option-label">English</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q14','Hindi',this)"><span class="option-icon">🇮🇳</span><div class="option-content"><div class="option-label">Hindi</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q14','Hinglish',this)"><span class="option-icon">🤝</span><div class="option-content"><div class="option-label">Hinglish</div><div class="option-sub">Mix of both</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q15 -->
+    <div class="section">
+      <div class="section-num">Question 15</div>
+      <div class="section-title">What makes you immediately ignore or swipe away a notification?</div>
+      <div class="section-desc">Pick all that apply — most important question for us.</div>
+      <div class="chips">
+        <div class="chip" onclick="multiSelect('q15','Too long to read',this)">📏 Too long to read</div>
+        <div class="chip" onclick="multiSelect('q15','Feels like an ad',this)">🚫 Feels like an ad</div>
+        <div class="chip" onclick="multiSelect('q15','Already knew this fact',this)">😒 Already knew it</div>
+        <div class="chip" onclick="multiSelect('q15','Came at the wrong time',this)">⏰ Wrong timing</div>
+        <div class="chip" onclick="multiSelect('q15','Too many notifications already',this)">🔔 Too many notifs</div>
+        <div class="chip" onclick="multiSelect('q15','Not relevant to my exam',this)">❌ Not relevant</div>
+        <div class="chip" onclick="multiSelect('q15','Boring/dry content',this)">😴 Boring content</div>
+        <div class="chip" onclick="multiSelect('q15','In deep focus mode',this)">🧘 Deep focus mode</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q16 -->
+    <div class="section">
+      <div class="section-num">Question 16</div>
+      <div class="section-title">Would you use ExamSpark more if your friends were also on it?</div>
+      <div class="options-grid cols-2">
+        <div class="option compact" onclick="select('q16','Yes - competition motivates me',this)"><span class="option-icon">🏆</span><div class="option-content"><div class="option-label">Yes!</div><div class="option-sub">Competition motivates me</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q16','Yes - I like studying with others',this)"><span class="option-icon">👥</span><div class="option-content"><div class="option-label">Yes!</div><div class="option-sub">I like studying with others</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q16','Maybe - depends on features',this)"><span class="option-icon">🤔</span><div class="option-content"><div class="option-label">Maybe</div><div class="option-sub">Depends on features</div></div><div class="option-check"></div></div>
+        <div class="option compact" onclick="select('q16','No - I prefer studying alone',this)"><span class="option-icon">🧘</span><div class="option-content"><div class="option-label">No</div><div class="option-sub">I prefer solo</div></div><div class="option-check"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Q17 -->
+    <div class="section">
+      <div class="section-num">Question 17</div>
+      <div class="section-title">What's the one thing that would make you actually open a notification while studying?</div>
+      <div class="section-desc">Be brutally honest — this shapes everything we build.</div>
+      <textarea class="text-input" id="q17-text" placeholder="e.g. 'If it's something shocking I didn't know, short enough to read in 5 seconds...'" oninput="updateProgress()"></textarea>
+    </div>
+    <div class="divider"></div>
+
+    <div class="submit-section">
+      <button class="submit-btn" onclick="submitForm()">Submit My Answers ⚡</button>
+      <p class="submit-note">Anonymous. Takes 5 minutes. Helps build a better app for all aspirants 🙏</p>
+    </div>
+  </div>
+
+  <div class="thankyou" id="thankyou-view">
+    <span class="thankyou-icon">🎉</span>
+    <h2>Thank you, <span style="background:linear-gradient(135deg,#FF6B35,#FF9A3C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Aspirant!</span></h2>
+    <p>Your answers will directly shape ExamSpark. We're building this for students like you — expect something great.</p>
+    <div class="result-card">
+      <div class="result-title">Your Responses</div>
+      <div id="result-summary"></div>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin-top:24px;">Share with fellow aspirants 👇</p>
+    <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button onclick="copyLink()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 20px;color:var(--text);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;">📋 Copy Link</button>
+      <button onclick="shareWhatsApp()" style="background:#25D36620;border:1px solid #25D36640;border-radius:10px;padding:10px 20px;color:#25D366;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;">💬 Share on WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const answers = { q1:null, q1_other:'', q2:null, q3:null, q4:[], q5:null, q6:[], q7:null, q8:[], q9:null, q10:null, q11:[], q12:null, q13:null, q14:null, q15:[], q16:null, q17:'' };
+  const totalQ = 17;
+
+  function select(qId, value, el) {
+    el.closest('.options-grid').querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    answers[qId] = value;
+    if (qId === 'q1') {
+      const otherInput = document.getElementById('other-exam');
+      if (otherInput) otherInput.style.display = value === 'Other' ? 'block' : 'none';
+    }
+    updateProgress();
+  }
+
+  function multiSelect(qId, value, el) {
+    el.classList.toggle('selected');
+    if (el.classList.contains('selected')) { if (!answers[qId].includes(value)) answers[qId].push(value); }
+    else { answers[qId] = answers[qId].filter(v => v !== value); }
+    updateProgress();
+  }
+
+  function updateProgress() {
+    answers.q17 = document.getElementById('q17-text').value;
+    let answered = 0;
+    ['q1','q2','q3','q5','q7','q9','q10','q12','q13','q14','q16'].forEach(k => { if (answers[k]) answered++; });
+    ['q4','q6','q8','q11','q15'].forEach(k => { if (answers[k].length > 0) answered++; });
+    if (answers.q17.trim().length > 5) answered++;
+    const pct = Math.round((answered / totalQ) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `${answered} of ${totalQ} answered`;
+    document.getElementById('progress-pct').textContent = pct + '%';
+  }
+
+  function submitForm() {
+    answers.q17 = document.getElementById('q17-text').value;
+    let answered = 0;
+    ['q1','q2','q3','q5','q7','q9','q10','q12','q13','q14','q16'].forEach(k => { if (answers[k]) answered++; });
+    ['q4','q6','q8','q11','q15'].forEach(k => { if (answers[k].length > 0) answered++; });
+    if (answers.q17.trim().length > 5) answered++;
+    if (answered < 10) { alert('Please answer at least 10 questions before submitting 🙏'); return; }
+
+    const summary = [
+      {label:'Exam', val: answers.q1 === 'Other' ? (answers.q1_other || 'Other') : answers.q1 || '—'},
+      {label:'Stage', val: answers.q2||'—'},
+      {label:'Resources used', val: answers.q4.join(', ')||'—'},
+      {label:'Monthly spend', val: answers.q5||'—'},
+      {label:'Sparks per day', val: answers.q10||'—'},
+      {label:'Best times', val: answers.q11.join(', ')||'—'},
+      {label:'Spark length', val: answers.q12||'—'},
+      {label:'Language', val: answers.q14||'—'},
+      {label:'Social features', val: answers.q16||'—'},
+    ];
+    document.getElementById('result-summary').innerHTML = summary.map(s=>`<div class="result-item"><span>${s.label}</span><span class="result-val">${s.val}</span></div>`).join('');
+    document.getElementById('form-view').style.display = 'none';
+    document.getElementById('thankyou-view').style.display = 'block';
+    window.scrollTo({top:0,behavior:'smooth'});
+    console.log('[ExamSpark Survey EN]', JSON.stringify(answers, null, 2));
+    fetch('https://script.google.com/macros/s/AKfycbwqvQSK7dxhNs766fa5DAar_DsMpXFuJmstyCEiGQkn-kdXkNocVARFD81N4Es-Xkmd/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...answers, lang: 'en' })
+    });
+  }
+
+  function copyLink() { navigator.clipboard.writeText(window.location.href).then(()=>alert('Link copied! 🙏')); }
+  function shareWhatsApp() { window.open("https://wa.me/?text="+encodeURIComponent("Help build a better study app for Indian exam aspirants! 5-min survey 👉 "+window.location.href),'_blank'); }
+</script>
+</body>
+</html>
