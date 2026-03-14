@@ -131,7 +131,9 @@ router.get("/debug/subscribers", async (req, res) => {
 router.post("/debug/trigger-spark", async (req, res) => {
   try {
     await sendDailySparkToAll("morning");
-    res.json({ ok: true, message: "Spark triggered" });
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    await sendDailySparkToAll("morning");
+    res.json({ ok: true, message: "2 sparks triggered" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
